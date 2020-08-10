@@ -1,17 +1,25 @@
 package com.codeup.springblog.controllers;
 
 import com.codeup.springblog.models.Post;
+import com.codeup.springblog.models.User;
+import com.codeup.springblog.repositories.PostRepository;
+import com.codeup.springblog.repositories.UserRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Controller
 public class PostController {
 
     private final PostRepository postsDao;
+    private final UserRepository usersDao;
 
-    public PostController(PostRepository postsDao) {
+    public PostController(PostRepository postsDao, UserRepository usersDao) {
         this.postsDao = postsDao;
+        this.usersDao = usersDao;
     }
 
     @GetMapping("/posts")
@@ -28,39 +36,45 @@ public class PostController {
     }
 
     @GetMapping("/posts/create")
-    @ResponseBody
-    public String create(){
-        return "Here is the form to create a post!";
+    public String showPostForm(Model model){
+        model.addAttribute("post", new Post());
+        return "posts/create";
     }
+
 
     @PostMapping("/posts/create")
-    @ResponseBody
-    public String insert(){
-        return "Post has been created!";
+    public String createPost(@ModelAttribute Post post) {
+        User user = usersDao.getOne(1L);
+        post.setAuthor(user);
+        postsDao.save(post);
+        return "redirect:/posts";
     }
 
+
     @GetMapping("/posts/{id}/edit")
-    public String editForm(@PathVariable long id, Model model) {
+    public String showEditForm(@PathVariable long id, Model model){
         model.addAttribute("post", postsDao.getOne(id));
         return "posts/edit";
     }
 
     @PostMapping("/posts/{id}/edit")
-    public String update(@PathVariable long id,
-                         @RequestParam String title,
-                         @RequestParam String body) {
-
-        Post postToEdit = postsDao.getOne(id);
-
-        postToEdit.setTitle(title);
-
-        postToEdit.setBody(body);
-
-        postsDao.save(postToEdit);
-
-        // redirect show page for the given post
-        return "redirect:/posts/" + id;
+    public String editPost(@PathVariable long id, @ModelAttribute Post post){
+        //TODO: Change user to logged in user dynamic
+        User user = usersDao.getOne(1L);
+        post.setAuthor(user);
+        postsDao.save(post);
+        return "redirect:/posts";
     }
+
+
+
+
+
+
+
+
+
+
 
     @PostMapping("/posts/{id}/delete")
     public String deletePost(@PathVariable long id) {
